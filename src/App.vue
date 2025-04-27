@@ -1,31 +1,18 @@
 <template>
   <div id="app">
-    <div v-if="loadingSession" class="flex justify-center items-center min-h-screen">
-      <p class="text-gray-500 text-lg">Loading...</p>
-    </div>
-    <Auth v-else-if="!session" />
-    <CrudApp v-else :key="session.user.id" @loggedOut="handleLogout" />
+    <!-- Router View will render the component based on the current route -->
+    <router-view />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { supabase } from './supabase' // Import Supabase client
-import Auth from './components/Auth.vue' // Import Auth component
-import CrudApp from './components/CrudApp.vue' // Import CrudApp component
 
-// Ref to hold the current session state
+// Ref to hold the current session state - still useful for global state if needed
 const session = ref(null)
-// Ref to track if we are still checking the initial session
-const loadingSession = ref(true)
 // Ref for the auth state change listener
 let authListener = null
-
-// Function to handle logout event from CrudApp (optional, as listener also handles it)
-const handleLogout = () => {
-  // The onAuthStateChange listener below will automatically update the session ref
-  console.log('Logout event received in App.vue')
-}
 
 // --- Lifecycle Hooks ---
 onMounted(() => {
@@ -34,31 +21,27 @@ onMounted(() => {
     .getSession()
     .then(({ data }) => {
       session.value = data.session
-      loadingSession.value = false // Finished initial check
-      console.log('Initial session check:', session.value)
+      console.log('Initial session check in App.vue:', session.value)
+      // Now that the session is known, the router's navigation guards can use it.
+      // If you have guards, they might re-trigger navigation based on this.
     })
     .catch((error) => {
       console.error('Error getting initial session:', error)
-      loadingSession.value = false // Still finish loading even on error
     })
 
   // 2. Listen for changes in authentication state (login, logout)
   const { data } = supabase.auth.onAuthStateChange((event, currentSession) => {
     console.log('Auth state changed in App.vue:', event, currentSession)
     session.value = currentSession // Update the session ref
-    // No need to set loadingSession here, it's only for the initial load
-    if (event === 'SIGNED_IN') {
-      console.log('User signed in.')
-      // Potentially navigate or refresh data if needed at the App level
-    }
-    if (event === 'SIGNED_OUT') {
-      console.log('User signed out.')
-      // Session is now null, Auth component will be displayed
+    // If the user logs out, we might need to force a redirect to the login page.
+    // This is typically handled by navigation guards in the router.
+    if (event === 'SIGNED_OUT' && currentSession === null) {
+      console.log('User signed out, router should handle redirect.')
     }
   })
 
   // Store the listener to unsubscribe later
-  authListener = data.subscription // Correct way to get the subscription object
+  authListener = data.subscription
 })
 
 onUnmounted(() => {

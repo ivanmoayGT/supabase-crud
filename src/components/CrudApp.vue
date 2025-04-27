@@ -4,7 +4,8 @@
       <div class="flex-1">
         <h1 class="text-3xl font-bold">My Items</h1>
       </div>
-      <div class="flex-none">
+      <div class="flex-none space-x-2">
+        <button @click="goToVisitDetail" class="btn btn-secondary btn-sm">Visit Detail</button>
         <button
           @click="handleLogout"
           :disabled="loadingLogout"
@@ -228,6 +229,7 @@
 
 <script setup>
 import { ref, onMounted, computed, nextTick, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { supabase, CRUD_TABLE_NAME } from '../supabase' // Import Supabase client and table name
 import L from 'leaflet' // Import Leaflet
 import 'leaflet/dist/leaflet.css' // Import Leaflet CSS
@@ -235,6 +237,7 @@ import 'leaflet/dist/leaflet.css' // Import Leaflet CSS
 // Props & Emits (optional, if needed for parent communication)
 // const props = defineProps({});
 const emit = defineEmits(['loggedOut']) // Emit event when user logs out
+const router = useRouter()
 
 // --- State ---
 const items = ref([]) // Array to hold fetched items
@@ -256,6 +259,13 @@ const mapMarker = ref(null) // Reference to the Leaflet marker
 // --- Computed Properties ---
 // Get user ID safely
 const userId = computed(() => user.value?.id)
+
+// --- Navigation ---
+const goToVisitDetail = () => {
+  // Assuming your route path for VisitDetail is '/visit-detail'
+  // Adjust the path if it's different in your router configuration.
+  router.push('/visit-detail')
+}
 
 // --- Map Methods ---
 
