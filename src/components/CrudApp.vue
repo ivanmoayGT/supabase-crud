@@ -1,125 +1,164 @@
 <template>
-  <div class="container mx-auto p-4 pt-6 md:p-6 lg:p-12 font-sans">
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold text-gray-800">My Items</h1>
-      <button
-        @click="handleLogout"
-        :disabled="loadingLogout"
-        class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50"
+  <div class="container mx-auto p-4 pt-6 md:p-6 lg:p-12">
+    <div class="navbar mb-6 bg-base-100 rounded-box shadow-sm">
+      <div class="flex-1">
+        <h1 class="text-3xl font-bold">My Items</h1>
+      </div>
+      <div class="flex-none">
+        <button
+          @click="handleLogout"
+          :disabled="loadingLogout"
+          class="btn btn-error btn-sm"
+          :class="{ loading: loadingLogout }"
+        >
+          <span v-if="!loadingLogout">Logout</span>
+          <span v-else>Logging out...</span>
+        </button>
+      </div>
+    </div>
+
+    <div v-if="crudError" role="alert" class="alert alert-error mb-4 shadow-md">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="stroke-current shrink-0 h-6 w-6"
+        fill="none"
+        viewBox="0 0 24 24"
       >
-        {{ loadingLogout ? 'Logging out...' : 'Logout' }}
-      </button>
-    </div>
-
-    <div v-if="crudError" class="mb-4 p-3 bg-red-100 text-red-700 border border-red-300 rounded-md">
-      Error: {{ crudError }}
-    </div>
-
-    <form @submit.prevent="handleSubmit" class="mb-6 p-4 bg-white rounded-lg shadow-md space-y-3">
-      <h2 class="text-xl font-semibold text-gray-700">
-        {{ editingItem ? 'Edit Item' : 'Add New Item' }}
-      </h2>
-      <div>
-        <label for="itemName" class="block text-sm font-medium text-gray-600">Item Name</label>
-        <input
-          type="text"
-          id="itemName"
-          v-model="newItemName"
-          required
-          placeholder="Enter item name"
-          class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
         />
-      </div>
-      <div>
-        <label for="itemDescription" class="block text-sm font-medium text-gray-600"
-          >Description (Optional)</label
-        >
-        <textarea
-          id="itemDescription"
-          v-model="newItemDescription"
-          rows="2"
-          placeholder="Enter a short description"
-          class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-        ></textarea>
-      </div>
-      <div class="flex items-center space-x-3">
-        <button
-          type="submit"
-          :disabled="loadingSubmit"
-          class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
-        >
-          <span v-if="loadingSubmit">Saving...</span>
-          <span v-else>{{ editingItem ? 'Update Item' : 'Add Item' }}</span>
-        </button>
-        <button
-          v-if="editingItem"
-          type="button"
-          @click="cancelEdit"
-          class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
+      </svg>
+      <span>Error: {{ crudError }}</span>
+    </div>
 
-    <div class="bg-white rounded-lg shadow-md overflow-hidden">
-      <div v-if="loadingItems" class="p-6 text-center text-gray-500">Loading items...</div>
-      <ul v-else-if="items.length > 0" class="divide-y divide-gray-200">
-        <li
-          v-for="item in items"
-          :key="item.id"
-          class="p-4 flex justify-between items-center hover:bg-gray-50"
-        >
-          <div class="flex-1 mr-4">
-            <p class="text-lg font-medium text-gray-900">{{ item.name }}</p>
-            <p v-if="item.description" class="text-sm text-gray-500">{{ item.description }}</p>
-            <p class="text-xs text-gray-400">Added: {{ formatDate(item.created_at) }}</p>
-          </div>
-          <div class="flex space-x-2">
-            <button
-              @click="startEdit(item)"
-              class="p-2 text-blue-600 hover:text-blue-800 rounded-full hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              aria-label="Edit item"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"
-                />
-                <path
-                  fill-rule="evenodd"
-                  d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-            </button>
-            <button
-              @click="deleteItem(item.id)"
-              :disabled="loadingDelete === item.id"
-              class="p-2 text-red-600 hover:text-red-800 rounded-full hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
-              aria-label="Delete item"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-            </button>
-          </div>
-        </li>
-      </ul>
-      <div v-else class="p-6 text-center text-gray-500">No items found. Add one above!</div>
+    <div class="card bg-base-100 shadow-xl mb-6">
+      <form @submit.prevent="handleSubmit" class="card-body">
+        <h2 class="card-title">{{ editingItem ? 'Edit Item' : 'Add New Item' }}</h2>
+
+        <div class="form-control w-full">
+          <label class="label" for="itemName">
+            <span class="label-text">Item Name</span>
+          </label>
+          <input
+            type="text"
+            id="itemName"
+            v-model="newItemName"
+            required
+            placeholder="Enter item name"
+            class="input input-bordered w-full"
+          />
+        </div>
+
+        <div class="form-control w-full">
+          <label class="label" for="itemDescription">
+            <span class="label-text">Description (Optional)</span>
+          </label>
+          <textarea
+            id="itemDescription"
+            v-model="newItemDescription"
+            rows="2"
+            placeholder="Enter a short description"
+            class="textarea textarea-bordered w-full"
+          ></textarea>
+        </div>
+
+        <div class="card-actions justify-start items-center mt-4">
+          <button
+            type="submit"
+            :disabled="loadingSubmit"
+            class="btn btn-primary"
+            :class="{ loading: loadingSubmit }"
+          >
+            <span v-if="!loadingSubmit">{{ editingItem ? 'Update Item' : 'Add Item' }}</span>
+            <span v-else>Saving...</span>
+          </button>
+          <button v-if="editingItem" type="button" @click="cancelEdit" class="btn btn-ghost">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl">
+      <div class="card-body">
+        <div v-if="loadingItems" class="text-center p-6">
+          <span class="loading loading-lg loading-spinner text-primary"></span>
+          <p class="mt-2">Loading items...</p>
+        </div>
+        <div v-else-if="items.length > 0" class="overflow-x-auto">
+          <table class="table w-full">
+            <!-- head -->
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Added</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in items" :key="item.id" class="hover">
+                <td>{{ item.name }}</td>
+                <td>{{ item.description || '-' }}</td>
+                <td>{{ formatDate(item.created_at) }}</td>
+                <td>
+                  <div class="flex space-x-1">
+                    <button
+                      @click="startEdit(item)"
+                      class="btn btn-ghost btn-xs btn-square"
+                      aria-label="Edit item"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"
+                        />
+                        <path
+                          fill-rule="evenodd"
+                          d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"
+                          clip-rule="evenodd"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      @click="deleteItem(item.id)"
+                      :disabled="loadingDelete === item.id"
+                      class="btn btn-ghost btn-xs btn-square text-error"
+                      :class="{ loading: loadingDelete === item.id }"
+                      aria-label="Delete item"
+                    >
+                      <span v-if="!(loadingDelete === item.id)">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-4 w-4"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fill-rule="evenodd"
+                            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                            clip-rule="evenodd"
+                          />
+                        </svg>
+                      </span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-else class="text-center p-6 text-base-content/70">
+          No items found. Add one above!
+        </div>
+      </div>
     </div>
   </div>
 </template>
